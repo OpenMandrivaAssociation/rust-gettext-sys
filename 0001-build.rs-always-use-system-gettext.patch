@@ -1,0 +1,55 @@
+From 9a533141e6df7b9777074768d35b5f2d51f2a327 Mon Sep 17 00:00:00 2001
+From: Igor Gnatenko <i.gnatenko.brain@gmail.com>
+Date: Tue, 19 Mar 2019 20:20:59 +0100
+Subject: [PATCH] build.rs: always use system gettext
+
+Signed-off-by: Igor Gnatenko <i.gnatenko.brain@gmail.com>
+---
+ build.rs | 31 ++++++++++++++-----------------
+ 1 file changed, 14 insertions(+), 17 deletions(-)
+
+diff --git a/build.rs b/build.rs
+index 5d57131f3e62..8ad68ccbf000 100644
+--- a/build.rs
++++ b/build.rs
+@@ -62,23 +62,20 @@ fn posix_path(path: &Path) -> String {
+ fn main() {
+     let target = env::var("TARGET").unwrap();
+ 
+-    if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
+-        if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
+-            // intl is part of glibc and musl
+-            return;
+-        } else if target.contains("windows") && target.contains("-gnu") {
+-            // gettext doesn't come with a pkg-config file
+-            let gnu_root = get_windows_gnu_root();
+-            println!("cargo:rustc-link-search=native={}/lib", &gnu_root);
+-            println!("cargo:rustc-link-search=native={}/../usr/lib", &gnu_root);
+-            println!("cargo:rustc-link-lib=dylib=intl");
+-            // FIXME: should pthread support be optional?
+-            // It is needed by `cargo test` while generating doc
+-            println!("cargo:rustc-link-lib=dylib=pthread");
+-            println!("cargo:include={}/../usr/include", &gnu_root);
+-            return;
+-        }
+-        // else can't use system gettext on this target
++    if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
++        // intl is part of glibc and musl
++        return;
++    } else if target.contains("windows") && target.contains("-gnu") {
++        // gettext doesn't come with a pkg-config file
++        let gnu_root = get_windows_gnu_root();
++        println!("cargo:rustc-link-search=native={}/lib", &gnu_root);
++        println!("cargo:rustc-link-search=native={}/../usr/lib", &gnu_root);
++        println!("cargo:rustc-link-lib=dylib=intl");
++        // FIXME: should pthread support be optional?
++        // It is needed by `cargo test` while generating doc
++        println!("cargo:rustc-link-lib=dylib=pthread");
++        println!("cargo:include={}/../usr/include", &gnu_root);
++        return;
+     }
+ 
+     if target.contains("apple-darwin") {
+-- 
+2.23.0
+
